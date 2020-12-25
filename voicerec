@@ -1,0 +1,77 @@
+import speech_recognition as sr
+import pyttsx3
+import requests
+import time
+import json
+import os
+s_city = "Nizhny Novgorod, RU"
+city_id = 0
+appid = "96dacc1195bc52ebe5454c4b84063c4a"
+try:
+    res = requests.get("http://api.openweathermap.org/data/2.5/find",
+                 params={'q': s_city, 'type': 'like', 'units': 'metric', 'APPID': appid})
+    data = res.json()
+    cities = ["{} ({})".format(d['name'], d['sys']['country'])
+              for d in data['list']]
+    print("city:", cities)
+    city_id = data['list'][0]['id']
+    print('city_id=', city_id)
+except Exception as e:
+    print("Exception (find):", e)
+    pass
+
+
+
+tts = pyttsx3.init()
+
+voices = tts.getProperty('voices')
+
+tts.setProperty('voice', 'ru') 
+
+for voice in voices:
+    if voice.name == 'Microsoft Irina Desktop - Russian':
+        tts.setProperty('voice', 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\TTS_MS_RU-RU_IRINA_11.0')
+
+rec = sr.Recognizer()
+with sr.Microphone(device_index=1) as source:
+    print("...")
+    audio = rec.listen(source)
+q = rec.recognize_google(audio,language="ru-RU").lower()
+while ("хватит" or "перестань" or "пока") not in q:
+    if "погоду" in q:
+        try:
+            res = requests.get("http://api.openweathermap.org/data/2.5/weather",
+                        params={'id': city_id, 'units': 'metric', 'lang': 'ru', 'APPID': appid})
+            data = res.json()
+            tts.say("Погодные Условия")
+            tts.runAndWait()
+            tts.say( data['weather'][0]['description'])
+            tts.runAndWait()
+            tts.say("Температура")
+            tts.runAndWait()
+            tts.say(data['main']['temp'])
+            tts.runAndWait()
+            tts.say("Минимальная температура")
+            tts.runAndWait()
+            tts.say(data['main']['temp_min'])
+            tts.runAndWait()
+            tts.say("Максимальная температура")
+            tts.runAndWait()
+            tts.say(data['main']['temp_max'])
+            tts.runAndWait()
+        except Exception as e:
+            print("Exception (weather):", e)
+            pass          
+    elif "привет" or "здраствуй" in q:
+        tts.say("Привет")
+        tts.runAndWait()
+    elif "новости" in q:
+        res = requests.get("http://newsapi.org/v2/top-headlines?country=ru&apiKey=e5..")
+        data = res.json()
+        tts.say(data['articles'][0]['title'])
+        tts.runAndWait()
+    elif "времяни" or "времени" in q:
+        now = datetime.datetime.now()
+        tts.say("Сейчас: " + str(now.hour) + "Часов" + str(now.minute) + "Минут")
+    else: 
+        tts.say("Я вас не понимаю")
