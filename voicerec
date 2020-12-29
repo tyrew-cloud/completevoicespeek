@@ -33,11 +33,11 @@ for voice in voices:
         tts.setProperty('voice', 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\TTS_MS_RU-RU_IRINA_11.0')
 
 rec = sr.Recognizer()
-with sr.Microphone(device_index=1) as source:
-    print("...")
-    audio = rec.listen(source)
-q = rec.recognize_google(audio,language="ru-RU").lower()
 while ("хватит" or "перестань" or "пока") not in q:
+    with sr.Microphone(device_index=1) as source:
+        print("...")
+        audio = rec.listen(source)
+    q = rec.recognize_google(audio,language="ru-RU").lower()
     if "погоду" in q:
         try:
             res = requests.get("http://api.openweathermap.org/data/2.5/weather",
